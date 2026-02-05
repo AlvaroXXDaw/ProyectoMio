@@ -1,0 +1,64 @@
+<div class="modal-overlay" (click)="closeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    
+    <!-- Header -->
+    <div class="modal-header">
+      <h2>Tu Carrito</h2>
+      <button class="close-btn" (click)="closeModal()">✕</button>
+    </div>
+
+    <!-- Success Message -->
+    @if (purchaseSuccess) {
+      <div class="success-message">
+        <span class="success-icon">✓</span>
+        <h3>{{ purchaseMessage }}</h3>
+        <p>Gracias por tu compra</p>
+        <button class="btn btn-primary" (click)="closeModal()">Cerrar</button>
+      </div>
+    } @else {
+      <!-- Cart Items -->
+      @if (cartItems.length === 0) {
+        <div class="empty-cart">
+          <span class="empty-icon">🛒</span>
+          <p>Tu carrito está vacío</p>
+        </div>
+      } @else {
+        <div class="cart-items">
+          @for (item of cartItems; track item.id) {
+            <div class="cart-item">
+              <img [src]="item.imagen" [alt]="item.nombre" class="item-image">
+              <div class="item-info">
+                <h4>{{ item.nombre }}</h4>
+                <p class="item-price">{{ item.precio }} €</p>
+              </div>
+              <div class="item-quantity">
+                <button class="qty-btn" (click)="updateQuantity(item.id, -1)">−</button>
+                <span>{{ item.cantidad }}</span>
+                <button class="qty-btn" (click)="updateQuantity(item.id, 1)">+</button>
+              </div>
+              <button class="remove-btn" (click)="removeItem(item.id)">🗑</button>
+            </div>
+          }
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+          <div class="total">
+            <span>Total:</span>
+            <strong>{{ total.toFixed(2) }} €</strong>
+          </div>
+          <button 
+            class="btn btn-primary buy-btn" 
+            (click)="comprar()"
+            [disabled]="isProcessing">
+            {{ isProcessing ? 'Procesando...' : 'Comprar' }}
+          </button>
+        </div>
+      }
+
+      @if (purchaseMessage && !purchaseSuccess) {
+        <div class="error-message">{{ purchaseMessage }}</div>
+      }
+    }
+  </div>
+</div>

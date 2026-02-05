@@ -1,0 +1,64 @@
+
+.category-filter {
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-light);
+  padding: 1rem 0;
+  position: sticky;
+  top: 70px;
+  z-index: 90;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.filter-wrapper {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding: 0.25rem 0;
+  scrollbar-width: thin;
+}
+
+.filter-wrapper::-webkit-scrollbar {
+  height: 6px;
+}
+
+.filter-wrapper::-webkit-scrollbar-track {
+  background: var(--bg-subtle);
+  border-radius: 3px;
+}
+
+.filter-wrapper::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
+  border-radius: 3px;
+}
+
+.filter-btn {
+  padding: 0.5rem 1.25rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.filter-btn:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+.filter-btn.active {
+  background: var(--text-primary);
+  color: var(--text-inverse);
+  border-color: var(--text-primary);
+  font-weight: 600;
+}

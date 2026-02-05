@@ -1,0 +1,18 @@
+<div class="hero-search">
+  <input 
+    type="text" 
+    placeholder="Buscar productos..." 
+    class="search-input"
+    [(ngModel)]="buscar"
+    (ngModelChange)="onBuscar()">
+  
+  <ul class="list-group" *ngIf="buscar && productos.length > 0">
+    @for (p of productos; track p.id) {
+      <li class="list-group-item" [routerLink]="['/producto', p.id]" (click)="limpiar()">
+        {{p.nombre}}
+        Precio: {{p.precio}}€
+        Stock: {{p.stock}}
+      </li>
+    }
+  </ul>
+</div>

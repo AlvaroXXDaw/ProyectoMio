@@ -1,0 +1,21 @@
+<nav class="category-filter">
+  <div class="container">
+    <div class="filter-wrapper">
+      <button 
+        class="filter-btn" 
+        [class.active]="selectedCategory === ''"
+        (click)="selectCategory('')">
+        Todas
+      </button>
+      
+      @for (categoria of categorias; track categoria) {
+        <button 
+          class="filter-btn" 
+          [class.active]="selectedCategory === categoria"
+          (click)="selectCategory(categoria)">
+          {{ categoria }}
+        </button>
+      }
+    </div>
+  </div>
+</nav>

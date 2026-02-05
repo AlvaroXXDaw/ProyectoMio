@@ -1,0 +1,45 @@
+<!-- NAVBAR GLOBAL (siempre visible) -->
+<nav class="navbar">
+  <div class="nav-content">
+    
+    <!-- Logo -->
+    <a routerLink="/" class="nav-logo">
+      TechStore
+    </a>
+
+    <!-- Links de Navegación -->
+    <div class="nav-links">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
+        🏠 Inicio
+      </a>
+
+      <!-- Solo Admin -->
+      <a routerLink="/admin" routerLinkActive="active" class="nav-item admin-link" *ngIf="isAdmin">
+         Configuracion stock
+      </a>
+    </div>
+
+    <!-- Botones de Auth -->
+    <div class="nav-auth">
+      <!-- Carrito (solo si está logueado y NO es admin) -->
+      <button class="cart-btn" (click)="toggleCart()" *ngIf="isLoggedIn && !isAdmin">
+        🛒
+        <span class="cart-badge" *ngIf="cartItemCount > 0">{{ cartItemCount }}</span>
+      </button>
+
+      <!-- Si NO está logueado -->
+      <a routerLink="/login" class="btn btn-primary" *ngIf="!isLoggedIn">
+        Iniciar sesión
+      </a>
+      
+      <!-- Si está logueado -->
+      <button class="btn-logout" (click)="logout()" *ngIf="isLoggedIn">
+        Salir ➜
+      </button>
+    </div>
+
+  </div>
+</nav>
+
+<!-- Cart Modal -->
+<app-cart-modal *ngIf="showCartModal" (close)="closeCart()"></app-cart-modal>

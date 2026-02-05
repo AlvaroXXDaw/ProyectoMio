@@ -1,0 +1,52 @@
+﻿<div class="home-page">
+  
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-badge">Colección 2026</div>
+      <h1 class="hero-title">Descubre los mejores productos tech</h1>
+      <p class="hero-subtitle">Encuentra lo que necesitas al mejor precio</p>
+      <div class="hero-search-shell">
+        <app-search></app-search>
+      </div>
+    </div>
+  </section>
+
+  <!-- Category Filter -->
+  <app-category-filter (categorySelected)="onCategoryChange($event)"></app-category-filter>
+
+  <!-- Productos -->
+  <main class="main-content">
+    <div class="content-header">
+      <div>
+        <p class="lede">Catálogo curado para entusiastas exigentes.</p>
+        <h2>Todos los productos</h2>
+      </div>
+      <select class="filter-select">
+        <option>Todos</option>
+        <option>Precio: menor a mayor</option>
+        <option>Precio: mayor a menor</option>
+      </select>
+    </div>
+
+    <div class="products-grid">
+      
+      @for (producto of productos; track producto.id) {
+        <article class="product-card" (click)="verDetalle(producto.id)">
+          <div class="card-media">
+            <img [src]="producto.imagen" [alt]="producto.nombre" class="product-image">
+          </div>
+          <div class="product-info">
+            <h3 class="product-name">{{producto.nombre}}</h3>
+            <div class="product-meta">
+              <p class="product-price">{{producto.precio}} €</p>
+            </div>
+            <button class="btn btn-outline">Ver detalles</button>
+          </div>
+        </article>
+      }
+
+    </div>
+  </main>
+
+</div>
