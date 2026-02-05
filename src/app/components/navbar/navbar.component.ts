@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { CartService } from '../../services/cart.service';
@@ -12,34 +12,70 @@ import { AuthData } from '../../auth-data';
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.css'
 })
-export class NavbarComponent implements OnInit {
+export class NavbarComponent {
+  // Variables para saber si el usuario está logueado y si es admin
   isAdmin = false;
   isLoggedIn = false;
   showCartModal = false;
-  
+
+  // Número de productos en el carrito
+  cartItemCount = 0;
+
+  // Servicios inyectados
   cartService = inject(CartService);
   authData = inject(AuthData);
   router = inject(Router);
 
-  ngOnInit() {
+  constructor() {
+    // =============================================
+    // Escuchamos los cambios del usuario logueado
+    // =============================================
     this.authData.user$.subscribe(user => {
-      this.isLoggedIn = !!user;
-      this.isAdmin = user?.rol === 'jefe';
+      // ¿Hay un usuario logueado?
+      if (user) {
+        this.isLoggedIn = true;
+
+        // ¿Es jefe (admin)?
+        if (user.rol === 'jefe') {
+          this.isAdmin = true;
+        } else {
+          this.isAdmin = false;
+        }
+      } else {
+        // No hay usuario logueado
+        this.isLoggedIn = false;
+        this.isAdmin = false;
+      }
+    });
+
+    // =============================================
+    // Escuchamos los cambios del carrito
+    // =============================================
+    this.cartService.cart$.subscribe(carrito => {
+      // Contamos cuántos productos hay en total
+      let total = 0;
+      carrito.forEach(item => {
+        total = total + item.cantidad;
+      });
+      this.cartItemCount = total;
     });
   }
 
-  get cartItemCount(): number {
-    return this.cartService.getItemCount();
-  }
-
+  // Abrir o cerrar el modal del carrito
   toggleCart() {
-    this.showCartModal = !this.showCartModal;
+    if (this.showCartModal === true) {
+      this.showCartModal = false;
+    } else {
+      this.showCartModal = true;
+    }
   }
 
+  // Cerrar el modal del carrito
   closeCart() {
     this.showCartModal = false;
   }
 
+  // Cerrar sesión
   logout() {
     this.authData.logout().subscribe(() => {
       this.router.navigate(['/login']);

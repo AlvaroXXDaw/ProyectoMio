@@ -8,7 +8,7 @@ import { BehaviorSubject, tap } from 'rxjs';
 export class AuthData {
   private http = inject(HttpClient);
   private apiUrl = 'http://localhost/DWEC/Angular/ProyectoMio/backend';
-  
+
   // Estado reactivo del usuario
   private userSubject = new BehaviorSubject<any>(null);
   user$ = this.userSubject.asObservable();
@@ -33,7 +33,7 @@ export class AuthData {
   }
 
   tryLogin(email: string, password: string) {
-    return this.http.post(`${this.apiUrl}/login.php`, 
+    return this.http.post(`${this.apiUrl}/login.php`,
       { email, password },
       { withCredentials: true } // Importante para enviar cookies
     ).pipe(

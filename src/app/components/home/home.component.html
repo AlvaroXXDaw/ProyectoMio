@@ -22,10 +22,10 @@
         <p class="lede">Catálogo curado para entusiastas exigentes.</p>
         <h2>Todos los productos</h2>
       </div>
-      <select class="filter-select">
-        <option>Todos</option>
-        <option>Precio: menor a mayor</option>
-        <option>Precio: mayor a menor</option>
+      <select class="filter-select" (change)="onPriceFilterChange($event)">
+        <option value="none">Todos</option>
+        <option value="asc">Precio: menor a mayor</option>
+        <option value="desc">Precio: mayor a menor</option>
       </select>
     </div>
 

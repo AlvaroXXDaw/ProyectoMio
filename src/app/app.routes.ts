@@ -5,6 +5,7 @@ import { HomeComponent } from './components/home/home.component';
 import { AdminComponent } from './components/admin/admin.component';
 import { ProductoDetalleComponent } from './components/producto-detalle/producto-detalle.component';
 import { CompraExitosaComponent } from './components/compra-exitosa/compra-exitosa.component';
+import { MisPedidosComponent } from './components/mis-pedidos/mis-pedidos.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -15,6 +16,7 @@ export const routes: Routes = [
   
   { path: 'producto/:id', component: ProductoDetalleComponent },
   { path: 'compra-exitosa', component: CompraExitosaComponent },
+  { path: 'mis-pedidos', component: MisPedidosComponent },
   { path: 'admin', component: AdminComponent },
   
   { path: '**', redirectTo: '' }

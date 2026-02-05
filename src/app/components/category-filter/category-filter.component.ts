@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, inject, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProductData } from '../../product-data';
 
@@ -9,18 +9,28 @@ import { ProductData } from '../../product-data';
   templateUrl: './category-filter.component.html',
   styleUrl: './category-filter.component.css'
 })
-export class CategoryFilterComponent implements OnInit {
+export class CategoryFilterComponent {
+  // Evento que se emite cuando el usuario selecciona una categoría
   @Output() categorySelected = new EventEmitter<string>();
-  
+
+  // Servicio para obtener datos
   private data = inject(ProductData);
+
+  // Lista de categorías disponibles
   categorias: string[] = [];
+
+  // Categoría actualmente seleccionada
   selectedCategory: string = '';
 
-  ngOnInit() {
-    this.loadCategorias();
+  constructor() {
+    // Cargamos las categorías al iniciar el componente
+    this.cargarCategorias();
   }
 
-  loadCategorias() {
+  // =============================================
+  // Función para cargar las categorías del servidor
+  // =============================================
+  cargarCategorias() {
     this.data.getCategorias().subscribe(
       (resp: any) => {
         if (resp.exito) {
@@ -33,8 +43,12 @@ export class CategoryFilterComponent implements OnInit {
     );
   }
 
+  // =============================================
+  // Función para seleccionar una categoría
+  // =============================================
   selectCategory(categoria: string) {
     this.selectedCategory = categoria;
+    // Emitimos la categoría seleccionada al componente padre
     this.categorySelected.emit(categoria);
   }
 }

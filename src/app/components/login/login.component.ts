@@ -25,7 +25,7 @@ export class LoginComponent {
           if (data.exito) {
             this.logged = true;
             this.username = data.usuario.nombre;
-            
+
             // Redirect to home
             this.router.navigate(['/']);
           } else {

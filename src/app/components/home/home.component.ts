@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+﻿import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ProductData } from '../../product-data';
@@ -16,7 +16,9 @@ export class HomeComponent {
   private data = inject(ProductData);
   private router = inject(Router);
   productos: any[] = [];
-  
+  productosTodos: any[] = [];
+  filtroPrecio = 'none';
+
   constructor() {
     this.getProductos();
   }
@@ -26,7 +28,8 @@ export class HomeComponent {
       (resp: any) => {
         console.log('Respuesta del servidor:', resp);
         if (resp.exito) {
-          this.productos = resp.productos;
+          this.productosTodos = resp.productos ?? [];
+          this.ordenarPorPrecio();
           console.log('Productos cargados:', this.productos);
         } else {
           console.log('No hay productos o error:', resp);
@@ -42,13 +45,32 @@ export class HomeComponent {
       this.data.getProductsByCategory(categoria).subscribe(
         (resp: any) => {
           if (resp.exito) {
-            this.productos = resp.productos;
+            this.productosTodos = resp.productos ?? [];
+            this.ordenarPorPrecio();
           }
         },
         (error: any) => {
-          console.error('Error al filtrar por categoría:', error);
+          console.error('Error al filtrar por categoria:', error);
         }
       );
+    }
+  }
+
+  onPriceFilterChange(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    this.filtroPrecio = select.value;
+    this.ordenarPorPrecio();
+  }
+
+  ordenarPorPrecio() {
+    this.productos = [...this.productosTodos];
+
+    if (this.filtroPrecio === 'asc') {
+      this.productos.sort((a, b) => parseFloat(a.precio) - parseFloat(b.precio));
+    }
+
+    if (this.filtroPrecio === 'desc') {
+      this.productos.sort((a, b) => parseFloat(b.precio) - parseFloat(a.precio));
     }
   }
 

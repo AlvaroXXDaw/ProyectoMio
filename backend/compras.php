@@ -1,212 +1,190 @@
 <?php
 /**
- * API de Compras - Tienda Online
- * 
- * Endpoints:
- * - POST /compras.php - Realizar una compra (requiere usuario logueado)
- * - GET /compras.php?user_id=X - Obtener historial de compras del usuario
- * 
- * NOTA PARA JUNIOR:
- * Esta API maneja las compras de productos. Cuando un usuario compra:
- * 1. Verifica que hay stock suficiente
- * 2. Crea un registro en la tabla 'compras'
- * 3. Reduce el stock del producto
+ * ============================================
+ * COMPRAS - Historial de pedidos
+ * ============================================
+ *
+ * GET  -> Devuelve las compras del usuario logueado
+ * POST -> Guarda las compras del usuario logueado
+ *
+ * Body POST:
+ * {
+ *   "items": [
+ *     { "id": 1, "cantidad": 2 },
+ *     { "id": 3, "cantidad": 1 }
+ *   ],
+ *   "facturaId": "FAC-20260205-123abc",
+ *   "facturaUrl": "http://host/..."
+ * }
  */
 
 require_once 'config.php';
 
+// ============================================
+// Verificar que el usuario esta logueado
+// ============================================
+if (!isset($_SESSION['user_id'])) {
+    http_response_code(401);
+    echo json_encode([
+        'exito' => false,
+        'mensaje' => 'No has iniciado sesion'
+    ]);
+    exit();
+}
+
+$usuarioId = intval($_SESSION['user_id']);
 $method = $_SERVER['REQUEST_METHOD'];
 
-switch($method) {
+switch ($method) {
     // ============================================
     // GET - Obtener historial de compras
     // ============================================
     case 'GET':
-        // Si se pasa user_id, obtener compras de ese usuario
-        if (isset($_GET['user_id'])) {
-            $userId = intval($_GET['user_id']);
-            
-            // Consulta que une compras con productos para obtener info completa
-            $sql = "SELECT 
-                        c.id AS compra_id,
-                        c.cantidad,
-                        c.precio_unitario,
-                        c.fecha_compra,
-                        p.id AS producto_id,
-                        p.nombre AS producto_nombre,
-                        p.imagen AS producto_imagen,
-                        (c.cantidad * c.precio_unitario) AS total
-                    FROM compras c
-                    INNER JOIN productos p ON c.producto_id = p.id
-                    WHERE c.usuario_id = $userId
-                    ORDER BY c.fecha_compra DESC";
-            
-            $result = $conn->query($sql);
-            
-            $compras = [];
-            $totalGastado = 0;
-            
-            while($row = $result->fetch_assoc()) {
-                $compras[] = $row;
-                $totalGastado += floatval($row['total']);
-            }
-            
-            echo json_encode([
-                'success' => true,
-                'compras' => $compras,
-                'total_compras' => count($compras),
-                'total_gastado' => $totalGastado
-            ]);
-        } else {
-            // Si no se pasa user_id, error
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'error' => 'Se requiere user_id para ver el historial'
-            ]);
+        $sql = "SELECT 
+                    c.id AS compra_id,
+                    c.cantidad,
+                    c.precio_unitario,
+                    c.fecha_compra,
+                    c.factura_id,
+                    c.factura_url,
+                    p.id AS producto_id,
+                    p.nombre AS producto_nombre,
+                    p.imagen AS producto_imagen,
+                    (c.cantidad * c.precio_unitario) AS total
+                FROM compras c
+                INNER JOIN productos p ON c.producto_id = p.id
+                WHERE c.usuario_id = ?
+                ORDER BY c.fecha_compra DESC";
+
+        $stmt = $conexion->prepare($sql);
+        $stmt->bind_param("i", $usuarioId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $compras = [];
+        $totalGastado = 0;
+
+        while ($row = $result->fetch_assoc()) {
+            $compras[] = $row;
+            $totalGastado += floatval($row['total']);
         }
+
+        echo json_encode([
+            'exito' => true,
+            'compras' => $compras,
+            'total_compras' => count($compras),
+            'total_gastado' => $totalGastado
+        ]);
         break;
-        
+
     // ============================================
-    // POST - Realizar una compra
+    // POST - Guardar compras
     // ============================================
     case 'POST':
-        // Leer los datos enviados en formato JSON
         $data = json_decode(file_get_contents('php://input'), true);
-        
-        // Validar que se envíen los campos necesarios
-        if (!isset($data['usuario_id']) || !isset($data['producto_id'])) {
+
+        if (!isset($data['items']) || !is_array($data['items']) || count($data['items']) === 0) {
             http_response_code(400);
             echo json_encode([
-                'success' => false,
-                'error' => 'Faltan campos obligatorios: usuario_id, producto_id'
+                'exito' => false,
+                'mensaje' => 'Items invalidos'
             ]);
-            break;
+            exit();
         }
-        
-        $usuarioId = intval($data['usuario_id']);
-        $productoId = intval($data['producto_id']);
-        $cantidad = isset($data['cantidad']) ? intval($data['cantidad']) : 1;
-        
-        // Validar que la cantidad sea positiva
-        if ($cantidad <= 0) {
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'error' => 'La cantidad debe ser mayor a 0'
-            ]);
-            break;
+
+        $facturaId = isset($data['facturaId']) ? trim($data['facturaId']) : null;
+        $facturaUrl = isset($data['facturaUrl']) ? trim($data['facturaUrl']) : null;
+
+        if ($facturaId) {
+            $stmtFactura = $conexion->prepare(
+                "SELECT factura_id FROM facturas WHERE factura_id = ? AND usuario_id = ?"
+            );
+            $stmtFactura->bind_param("si", $facturaId, $usuarioId);
+            $stmtFactura->execute();
+            $resFactura = $stmtFactura->get_result();
+
+            if ($resFactura->num_rows === 0) {
+                http_response_code(400);
+                echo json_encode([
+                    'exito' => false,
+                    'mensaje' => 'Factura no valida'
+                ]);
+                exit();
+            }
         }
-        
-        // ============================================
-        // PASO 1: Verificar que el producto existe y tiene stock
-        // ============================================
-        $sqlProducto = "SELECT id, nombre, precio, stock FROM productos WHERE id = $productoId";
-        $resultProducto = $conn->query($sqlProducto);
-        
-        if ($resultProducto->num_rows === 0) {
-            http_response_code(404);
-            echo json_encode([
-                'success' => false,
-                'error' => 'Producto no encontrado'
-            ]);
-            break;
-        }
-        
-        $producto = $resultProducto->fetch_assoc();
-        
-        // Verificar stock suficiente
-        if ($producto['stock'] < $cantidad) {
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'error' => 'Stock insuficiente',
-                'stock_disponible' => intval($producto['stock']),
-                'cantidad_solicitada' => $cantidad
-            ]);
-            break;
-        }
-        
-        // ============================================
-        // PASO 2: Verificar que el usuario existe
-        // ============================================
-        $sqlUsuario = "SELECT id, nombre FROM usuarios WHERE id = $usuarioId";
-        $resultUsuario = $conn->query($sqlUsuario);
-        
-        if ($resultUsuario->num_rows === 0) {
-            http_response_code(404);
-            echo json_encode([
-                'success' => false,
-                'error' => 'Usuario no encontrado'
-            ]);
-            break;
-        }
-        
-        // ============================================
-        // PASO 3: Iniciar transacción para asegurar consistencia
-        // ============================================
-        // Una transacción asegura que si algo falla, no se hacen cambios parciales
-        $conn->begin_transaction();
-        
+
+        $conexion->begin_transaction();
+
         try {
-            // Insertar la compra
-            $precioUnitario = floatval($producto['precio']);
-            $sqlCompra = "INSERT INTO compras (usuario_id, producto_id, cantidad, precio_unitario) 
-                          VALUES ($usuarioId, $productoId, $cantidad, $precioUnitario)";
-            
-            if (!$conn->query($sqlCompra)) {
-                throw new Exception('Error al registrar la compra: ' . $conn->error);
+            $stmtProducto = $conexion->prepare("SELECT precio FROM productos WHERE id = ?");
+            $stmtInsert = $conexion->prepare(
+                "INSERT INTO compras (usuario_id, producto_id, cantidad, precio_unitario, factura_id, factura_url)
+                 VALUES (?, ?, ?, ?, ?, ?)"
+            );
+
+            foreach ($data['items'] as $item) {
+                if (!isset($item['id']) || !isset($item['cantidad'])) {
+                    throw new Exception('Formato de item incorrecto');
+                }
+
+                $productoId = intval($item['id']);
+                $cantidad = intval($item['cantidad']);
+
+                if ($productoId <= 0 || $cantidad <= 0) {
+                    throw new Exception('Datos de item invalidos');
+                }
+
+                // Obtener precio actual
+                $stmtProducto->bind_param("i", $productoId);
+                $stmtProducto->execute();
+                $resultProducto = $stmtProducto->get_result();
+
+                if ($resultProducto->num_rows === 0) {
+                    throw new Exception('Producto no encontrado');
+                }
+
+                $producto = $resultProducto->fetch_assoc();
+                $precioUnitario = floatval($producto['precio']);
+
+                $stmtInsert->bind_param(
+                    "iiidss",
+                    $usuarioId,
+                    $productoId,
+                    $cantidad,
+                    $precioUnitario,
+                    $facturaId,
+                    $facturaUrl
+                );
+
+                if (!$stmtInsert->execute()) {
+                    throw new Exception('Error al guardar la compra');
+                }
             }
-            
-            $compraId = $conn->insert_id;
-            
-            // Reducir el stock del producto
-            $nuevoStock = intval($producto['stock']) - $cantidad;
-            $sqlStock = "UPDATE productos SET stock = $nuevoStock WHERE id = $productoId";
-            
-            if (!$conn->query($sqlStock)) {
-                throw new Exception('Error al actualizar el stock: ' . $conn->error);
-            }
-            
-            // Si todo salió bien, confirmar la transacción
-            $conn->commit();
-            
-            // Calcular el total de la compra
-            $totalCompra = $cantidad * $precioUnitario;
-            
+
+            $conexion->commit();
+
             echo json_encode([
-                'success' => true,
-                'message' => '¡Compra realizada exitosamente!',
-                'compra' => [
-                    'id' => $compraId,
-                    'producto' => $producto['nombre'],
-                    'cantidad' => $cantidad,
-                    'precio_unitario' => $precioUnitario,
-                    'total' => $totalCompra,
-                    'stock_restante' => $nuevoStock
-                ]
+                'exito' => true,
+                'mensaje' => 'Compras guardadas'
             ]);
-            
         } catch (Exception $e) {
-            // Si algo falla, deshacer todos los cambios
-            $conn->rollback();
-            
+            $conexion->rollback();
             http_response_code(500);
             echo json_encode([
-                'success' => false,
-                'error' => $e->getMessage()
+                'exito' => false,
+                'mensaje' => $e->getMessage()
             ]);
         }
         break;
-        
+
     default:
         http_response_code(405);
         echo json_encode([
-            'success' => false,
-            'error' => 'Método no permitido. Use GET o POST'
+            'exito' => false,
+            'mensaje' => 'Metodo no permitido'
         ]);
         break;
 }
 
-$conn->close();
+$conexion->close();
 ?>

@@ -15,25 +15,48 @@ export class RegistroComponent {
   private authData = inject(AuthData);
   private router = inject(Router);
 
+  // =============================================
+  // Función para intentar registrar un usuario
+  // =============================================
   tryRegister(nombre: string, email: string, password: string, passwordConfirm: string) {
-    if (nombre.length === 0 || email.length === 0 || password.length === 0 || passwordConfirm.length === 0) {
-      alert('Todos los campos son obligatorios');
+    // Validamos que todos los campos estén rellenos
+    if (nombre.length === 0) {
+      alert('El nombre es obligatorio');
       return;
     }
 
+    if (email.length === 0) {
+      alert('El email es obligatorio');
+      return;
+    }
+
+    if (password.length === 0) {
+      alert('La contraseña es obligatoria');
+      return;
+    }
+
+    if (passwordConfirm.length === 0) {
+      alert('Debes confirmar la contraseña');
+      return;
+    }
+
+    // Validamos que las contraseñas coincidan
     if (password !== passwordConfirm) {
       alert('Las contraseñas no coinciden');
       return;
     }
 
+    // Validamos que la contraseña tenga al menos 6 caracteres
     if (password.length < 6) {
       alert('La contraseña debe tener al menos 6 caracteres');
       return;
     }
 
+    // Enviamos los datos al servidor
     this.authData.tryRegister(nombre, email, password).subscribe(
       (data: any) => {
         console.log('Respuesta del servidor:', data);
+
         if (data.exito) {
           alert('¡Cuenta creada exitosamente! Ahora puedes iniciar sesión.');
           this.router.navigate(['/login']);
@@ -43,7 +66,20 @@ export class RegistroComponent {
       },
       (error: any) => {
         console.error('Error completo:', error);
-        alert('Error al crear la cuenta: ' + (error.error?.mensaje || error.message || 'Por favor, intenta de nuevo.'));
+
+        // Mostramos un mensaje de error amigable
+        let mensajeError = 'Error al crear la cuenta. Por favor, intenta de nuevo.';
+
+        // Intentamos obtener el mensaje de error del servidor
+        if (error.error) {
+          if (error.error.mensaje) {
+            mensajeError = error.error.mensaje;
+          }
+        } else if (error.message) {
+          mensajeError = error.message;
+        }
+
+        alert(mensajeError);
       }
     );
   }
